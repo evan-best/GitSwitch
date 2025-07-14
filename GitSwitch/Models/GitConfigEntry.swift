@@ -6,3 +6,10 @@
 //
 
 import Foundation
+
+struct GitConfigEntry: Identifiable {
+    var id: String { key + origin }
+    let key: String
+    let value: String
+    let origin: String
+}
