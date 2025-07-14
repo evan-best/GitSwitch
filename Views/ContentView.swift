@@ -9,51 +9,70 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var current: CurrentGitConfig = GitService.readCurrentProfile()
+    @State private var profiles: [GitProfile] = GitService.extractAllGitProfiles()
+    @State private var showAddProfile = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                Image(systemName: "person.crop.circle.fill")
-                    .resizable()
-                    .frame(width: 36, height: 36)
-                    .foregroundColor(.accentColor)
+            Text("GitSwitch")
+                .font(.title3)
+                .bold()
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(current.name.isEmpty ? "No Git user found" : current.name)
-                        .font(.headline)
+            Text("Profiles")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.top, 4)
 
-                    if !current.email.isEmpty {
-                        Text(current.email)
-                            .bold()
-                            .font(.subheadline)
-                    } else {
-                        Text("No email configured")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+            ForEach(profiles) { profile in
+                Button(action: {
+                    GitService.switchTo(profile: profile)
+                    current = GitService.readCurrentProfile()
+                    profiles = GitService.extractAllGitProfiles()
+                }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.name)
+                                .font(.subheadline)
+                                .bold()
+                            Text(profile.email)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        if profile.email == current.email {
+                            Text("Current")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(4)
+                        }
                     }
                 }
-            }
-
-            if let ssh = current.sshKeyPath {
-                Text("SSH Key: \(ssh)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                .buttonStyle(.plain)
             }
 
             Divider()
 
-            Button("Add Profile…") {
-                print("TODO: Open add profile UI")
+            Button("Add Profile") {
+                showAddProfile = true
             }
             .buttonStyle(.bordered)
         }
         .padding()
-        .frame(width: 260)
+        .frame(width: 280)
+        .sheet(isPresented: $showAddProfile) {
+            AddProfileView { newProfile in
+                GitService.switchTo(profile: newProfile)
+                current = GitService.readCurrentProfile()
+                profiles = GitService.extractAllGitProfiles()
+            }
+        }
     }
 }
-
-
 
 #Preview {
     ContentView()
 }
+

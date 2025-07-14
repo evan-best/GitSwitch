@@ -39,13 +39,12 @@ class GitService {
         print("CURRENT CONFIG: \(output)")
         for line in output.components(separatedBy: "\n") {
             if line.hasPrefix("user.name=") {
-                name = String(line.dropFirst("user.name=".count)) // ⚠️ This is incorrect
+                name = String(line.dropFirst("user.name=".count))
             } else if line.hasPrefix("user.email=") {
-                email = String(line.dropFirst("user.email=".count)) // ⚠️ Also incorrect
+                email = String(line.dropFirst("user.email=".count))
             }
         }
 
-        // String splitting to get user.name
         if name.isEmpty || email.isEmpty {
             for line in output.components(separatedBy: "\n") {
                 let parts = line.split(separator: "=", maxSplits: 1)
@@ -59,33 +58,51 @@ class GitService {
         }
 
         let sshTarget = runShell("readlink ~/.ssh/id_rsa").trimmingCharacters(in: .whitespacesAndNewlines)
-        let fullSSHPath = sshTarget.isEmpty ? nil : ("~/.ssh/" as NSString).appendingPathComponent(sshTarget)
+        let fullSSHPath = sshTarget.isEmpty ? "~/.ssh/id_rsa" : ("~/.ssh/" as NSString).appendingPathComponent(sshTarget)
 
         return CurrentGitConfig(name: name, email: email, sshKeyPath: fullSSHPath)
     }
 
+    static func extractAllGitProfiles() -> [GitProfile] {
+        let name = runShell("git config --global user.name").trimmingCharacters(in: .whitespacesAndNewlines)
+        let email = runShell("git config --global user.email").trimmingCharacters(in: .whitespacesAndNewlines)
+        let sshTarget = runShell("readlink ~/.ssh/id_rsa").trimmingCharacters(in: .whitespacesAndNewlines)
+        let sshKeyPath = sshTarget.isEmpty ? "~/.ssh/id_rsa" : ("~/.ssh/" as NSString).appendingPathComponent(sshTarget)
 
-    static func fullGitConfig() -> [GitConfigEntry] {
-        let output = runShell("git config --list --show-origin")
-        var entries: [GitConfigEntry] = []
-
-        for line in output.components(separatedBy: "\n") {
-            if line.hasPrefix("file:") {
-                let parts = line.components(separatedBy: "\t")
-                if parts.count == 2 {
-                    let origin = parts[0].replacingOccurrences(of: "file:", with: "")
-                    let keyValue = parts[1].components(separatedBy: "=")
-                    if keyValue.count == 2 {
-                        entries.append(GitConfigEntry(
-                            key: keyValue[0],
-                            value: keyValue[1],
-                            origin: origin
-                        ))
-                    }
-                }
-            }
+        guard !name.isEmpty && !email.isEmpty else {
+            return []
         }
 
-        return entries
+        let profile = GitProfile(
+            id: UUID(),
+            label: "default",
+            name: name,
+            email: email,
+            sshKeyPath: sshKeyPath
+        )
+
+        return [profile]
+    }
+
+    static func generateSSHKeyPair(label: String, email: String) -> (privateKey: String, publicKey: String)? {
+        let fileName = "id_rsa_\(label)"
+        let privatePath = ("~/.ssh/\(fileName)" as NSString).expandingTildeInPath
+        let publicPath = privatePath + ".pub"
+
+        let script = """
+        mkdir -p ~/.ssh
+        ssh-keygen -t rsa -b 4096 -C "\(email)" -f "\(privatePath)" -N ""
+        """
+
+        _ = runShell(script)
+
+        do {
+            let privateKey = try String(contentsOfFile: privatePath)
+            let publicKey = try String(contentsOfFile: publicPath)
+            return (privateKey, publicKey)
+        } catch {
+            print("❌ Failed to read generated key: \(error)")
+            return nil
+        }
     }
 }
