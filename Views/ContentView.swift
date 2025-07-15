@@ -4,13 +4,31 @@
 //
 //  Created by Evan Best on 2025-07-14.
 //
-
 import SwiftUI
 
 struct ContentView: View {
     @State private var current: CurrentGitConfig = GitService.readCurrentProfile()
-    @State private var profiles: [GitProfile] = GitService.extractAllGitProfiles()
+    @State private var profiles: [GitProfile] = KeychainService().loadProfiles()
+
     @State private var showAddProfile = false
+    @State private var selectedProfile: GitProfile? = nil
+    @State private var showDeleteConfirmation = false
+    @State private var profileToDelete: GitProfile?
+
+    private func importInitialProfileIfNeeded() {
+        print("importInitialProfileIfNeeded called")
+        if profiles.isEmpty {
+            let imported = GitService.extractAllGitProfiles()
+            print("extractAllGitProfiles returned: \(imported)")
+            let keychain = KeychainService()
+            for profile in imported {
+                keychain.saveProfile(profile)
+                print("Saved profile to keychain: \(profile)")
+            }
+            profiles = keychain.loadProfiles()
+            print("Profiles loaded after save: \(profiles)")
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -24,11 +42,9 @@ struct ContentView: View {
                 .padding(.top, 4)
 
             ForEach(profiles) { profile in
-                Button(action: {
-                    GitService.switchTo(profile: profile)
-                    current = GitService.readCurrentProfile()
-                    profiles = GitService.extractAllGitProfiles()
-                }) {
+                Button {
+                    selectedProfile = profile
+                } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.name)
@@ -50,29 +66,75 @@ struct ContentView: View {
                         }
                     }
                 }
+                .contextMenu {
+                    Button("Delete", role: .destructive) {
+                        profileToDelete = profile
+                        showDeleteConfirmation = true
+                    }
+                }
                 .buttonStyle(.plain)
             }
 
             Divider()
 
-            Button("Add Profile") {
-                showAddProfile = true
+            HStack {
+                Button("Close") {
+                    NSApp.terminate(nil)
+                }
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+                Spacer()
+
+                Button("Add Profile") {
+                    showAddProfile = true
+                }
+                .font(.subheadline)
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.bordered)
+            .padding(.top)
+
         }
         .padding()
         .frame(width: 280)
+        .onAppear {
+            importInitialProfileIfNeeded()
+        }
         .sheet(isPresented: $showAddProfile) {
             AddProfileView { newProfile in
                 GitService.switchTo(profile: newProfile)
                 current = GitService.readCurrentProfile()
-                profiles = GitService.extractAllGitProfiles()
+                profiles = KeychainService().loadProfiles()
             }
         }
+        .sheet(item: $selectedProfile) { profile in
+            ProfileDetailView(profile: profile) {
+                GitService.switchTo(profile: profile)
+                current = GitService.readCurrentProfile()
+                profiles = KeychainService().loadProfiles()
+            }
+        }
+        .alert("Delete this profile?", isPresented: $showDeleteConfirmation, presenting: profileToDelete) { profile in
+            Button("Delete", role: .destructive) {
+                deleteProfile(profile)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { _ in
+            Text("This action cannot be undone.")
+        }
+
+    }
+
+    private func deleteProfile(_ profile: GitProfile) {
+        let keychain = KeychainService()
+        keychain.deleteProfile(withID: profile.id)
+        profiles = keychain.loadProfiles()
+        current = GitService.readCurrentProfile()
     }
 }
+
+
 
 #Preview {
     ContentView()
 }
-

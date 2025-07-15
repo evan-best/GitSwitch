@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		244030352E25CAF600A05AFC /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 244030342E25CAF600A05AFC /* KeychainAccess */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2490138A2E258B4F005F9601 /* GitSwitch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitSwitch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -43,6 +47,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				244030352E25CAF600A05AFC /* KeychainAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,6 +98,7 @@
 			);
 			name = GitSwitch;
 			packageProductDependencies = (
+				244030342E25CAF600A05AFC /* KeychainAccess */,
 			);
 			productName = GitSwitch;
 			productReference = 2490138A2E258B4F005F9601 /* GitSwitch.app */;
@@ -122,6 +128,9 @@
 			);
 			mainGroup = 249013812E258B4F005F9601;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				244030332E25CAF600A05AFC /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2490138B2E258B4F005F9601 /* Products */;
 			projectDirPath = "";
@@ -361,6 +370,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		244030332E25CAF600A05AFC /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		244030342E25CAF600A05AFC /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 244030332E25CAF600A05AFC /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 249013822E258B4F005F9601 /* Project object */;
 }
