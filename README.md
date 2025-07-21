@@ -38,7 +38,7 @@ GitSwitch is a native Swift menu bar app that helps developers manage multiple G
 ### Clone & Build
 
 ```bash
-git clone https://github.com/yourusername/GitSwitch.git
+git clone https://github.com/evan-best/GitSwitch.git
 cd GitSwitch
 open GitSwitch.xcodeproj
 ```
